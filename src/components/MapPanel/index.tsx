@@ -139,7 +139,7 @@ export function MapPanel() {
 
   if (!MAPBOX_TOKEN) {
     return (
-      <div className="flex-1 h-full bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center gap-4 p-8 text-center">
         <div className="text-6xl">🗺️</div>
         <div>
           <h2 className="text-xl font-bold text-slate-700">Map Preview</h2>
@@ -177,7 +177,7 @@ export function MapPanel() {
   }
 
   return (
-    <div className="flex-1 h-full relative">
+    <div className="absolute inset-0">
       <div ref={mapContainerRef} className="w-full h-full" />
 
       {/* Search context overlay */}

@@ -3,15 +3,15 @@ import { MapPanel } from "@/components/MapPanel";
 
 export default function Home() {
   return (
-    <main className="flex h-full w-full overflow-hidden">
-      {/* Left: Chat Panel */}
-      <div className="w-[380px] flex-shrink-0 flex flex-col h-full border-r shadow-lg z-10">
-        <ChatPanel />
+    <main className="flex flex-row h-screen w-screen overflow-hidden">
+      {/* Left: Map Panel — fills remaining space */}
+      <div className="flex-1 min-w-0 relative">
+        <MapPanel />
       </div>
 
-      {/* Right: Map Panel */}
-      <div className="flex-1 h-full relative">
-        <MapPanel />
+      {/* Right: Chat Panel — fixed width sidebar */}
+      <div className="w-[380px] flex-shrink-0 flex flex-col border-l shadow-xl z-10">
+        <ChatPanel />
       </div>
     </main>
   );

@@ -42,7 +42,7 @@ export function ChatPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b bg-white dark:bg-slate-900">
         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
