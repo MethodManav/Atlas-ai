@@ -1,19 +1,21 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { searchHotels, getMockHotels } from "@/lib/amadeus";
+import { searchHotels } from "@/lib/liteapi";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { city, checkIn, checkOut, guests, rooms, maxPrice, minRating } = body;
+    console.log("Received hotel search request", body);
+    const { city, checkIn, checkOut, guests, rooms, maxPrice, minRating } =
+      body;
 
     if (!city) {
       return NextResponse.json({ error: "City is required" }, { status: 400 });
     }
 
-    // Default dates if not provided
     const today = new Date().toISOString().split("T")[0];
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
+    const tomorrow = new Date(Date.now() + 86400000)
+      .toISOString()
+      .split("T")[0];
 
     const params = {
       city,
@@ -25,14 +27,7 @@ export async function POST(req: NextRequest) {
       minRating,
     };
 
-    // Try Amadeus first, fall back to mock data
-    let hotels;
-    if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
-      hotels = await searchHotels(params);
-    } else {
-      // Use mock data in development
-      hotels = getMockHotels(params);
-    }
+    const hotels = await searchHotels(params);
 
     return NextResponse.json({
       hotels,
@@ -43,16 +38,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Hotel search error:", error);
-    // Return mock data as fallback
-    const body = await req.text().catch(() => "{}");
-    const parsed = JSON.parse(body || "{}");
-    const hotels = getMockHotels({ city: parsed.city });
-    return NextResponse.json({
-      hotels,
-      city: parsed.city || "Unknown",
-      checkIn: parsed.checkIn || "",
-      checkOut: parsed.checkOut || "",
-      totalFound: hotels.length,
-    });
+    const message =
+      error instanceof Error ? error.message : "Hotel search failed";
+    const status = message.includes("not configured") ? 503 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

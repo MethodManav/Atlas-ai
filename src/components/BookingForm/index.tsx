@@ -1,24 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CreditCard, User, Mail, Phone, CalendarDays, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAtlasStore } from "@/lib/store";
-import type { Hotel } from "@/lib/amadeus";
+import { normalizeHotel, type Hotel, type HotelInput } from "@/lib/hotels";
 
 interface BookingFormProps {
-  hotel: Hotel;
-  checkIn: string;
-  checkOut: string;
+  hotel: HotelInput;
+  checkIn?: string;
+  checkOut?: string;
   guests?: number;
 }
 
 type Step = "details" | "payment" | "confirming";
 
-export function BookingForm({ hotel, checkIn, checkOut, guests = 1 }: BookingFormProps) {
+export function BookingForm({
+  hotel: hotelProp,
+  checkIn: checkInProp = "",
+  checkOut: checkOutProp = "",
+  guests = 1,
+}: BookingFormProps) {
+  const hotel = useMemo(() => normalizeHotel(hotelProp), [hotelProp]);
+  const checkIn = checkInProp;
+  const checkOut = checkOutProp;
   const { setBookingHotel } = useAtlasStore();
   const [step, setStep] = useState<Step>("details");
   const [loading, setLoading] = useState(false);
@@ -54,6 +62,7 @@ export function BookingForm({ hotel, checkIn, checkOut, guests = 1 }: BookingFor
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hotelId: hotel.id,
+          offerId: hotel.offerId,
           guestFirstName: form.firstName,
           guestLastName: form.lastName,
           guestEmail: form.email,

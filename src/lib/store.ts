@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Hotel } from "@/lib/amadeus";
+import type { Hotel } from "@/lib/hotels";
 
 interface MapState {
   center: [number, number]; // [lng, lat]

@@ -4,26 +4,40 @@ import { HotelResultsList } from "@/components/HotelResultsList";
 import { BookingForm } from "@/components/BookingForm";
 import { BookingConfirmation } from "@/components/BookingConfirmation";
 
-// ─── Zod Schemas ──────────────────────────────────────────────────────────────
+// ─── Zod Schemas (plain only — no transform/preprocess; Tambo converts to JSON Schema) ─
 
-export const HotelSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  rating: z.number().min(1).max(5),
-  reviewScore: z.number().min(0).max(10),
-  reviewCount: z.number(),
-  price: z.number(),
-  currency: z.string(),
-  address: z.string(),
-  city: z.string(),
-  country: z.string(),
-  lat: z.number(),
-  lng: z.number(),
-  amenities: z.array(z.string()),
-  imageUrl: z.string(),
-  description: z.string(),
-  available: z.boolean(),
+/** Lenient hotel shape the AI may pass; components call normalizeHotel(). */
+export const TamboHotelSchema = z.object({
+  id: z.string().describe("Hotel ID"),
+  name: z.string().describe("Hotel name"),
+  rating: z.number().optional().describe("Star rating 1–5"),
+  reviewScore: z
+    .number()
+    .optional()
+    .describe("Guest review score 0–10"),
+  reviewCount: z.number().optional(),
+  price: z.number().optional().describe("Price per night"),
+  currency: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  latitude: z.number().optional().describe("Same as lat"),
+  longitude: z.number().optional().describe("Same as lng"),
+  amenities: z.array(z.string()).optional(),
+  imageUrl: z.string().optional(),
+  main_photo: z.string().optional().describe("Photo URL from LiteAPI"),
+  thumbnail: z.string().optional(),
+  description: z.string().optional(),
+  available: z.boolean().optional(),
+  offerId: z
+    .string()
+    .optional()
+    .describe("LiteAPI offer ID — required for booking"),
 });
+
+export const HotelSchema = TamboHotelSchema;
 
 export const SearchParamsSchema = z.object({
   city: z.string().describe("Name of the city to search hotels in"),
@@ -59,8 +73,17 @@ const searchHotelsTool: TamboTool = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
-    if (!res.ok) throw new Error("Hotel search failed");
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error ?? "Hotel search failed");
+    }
+    return {
+      hotels: Array.isArray(data.hotels) ? data.hotels : [],
+      city: data.city ?? params.city,
+      checkIn: data.checkIn ?? params.checkIn,
+      checkOut: data.checkOut ?? params.checkOut,
+      totalFound: data.totalFound ?? 0,
+    };
   },
   inputSchema: SearchParamsSchema,
   outputSchema: z.object({
@@ -95,11 +118,16 @@ const hotelResultsComponent: TamboComponent = {
     "Displays a list of hotel search results with prices, ratings, amenities and a Book button. Use this whenever showing hotel search results to the user.",
   component: HotelResultsList,
   propsSchema: z.object({
-    hotels: z.array(HotelSchema).describe("List of hotels to display"),
-    city: z.string().describe("City name for the search"),
-    checkIn: z.string().describe("Check-in date"),
-    checkOut: z.string().describe("Check-out date"),
-    totalFound: z.number().describe("Total number of hotels found"),
+    hotels: z
+      .array(TamboHotelSchema)
+      .default([])
+      .describe(
+        "Hotels from searchHotels — pass the tool result hotels array unchanged",
+      ),
+    city: z.string().default("").describe("City name for the search"),
+    checkIn: z.string().default("").describe("Check-in date YYYY-MM-DD"),
+    checkOut: z.string().default("").describe("Check-out date YYYY-MM-DD"),
+    totalFound: z.number().default(0).describe("Total number of hotels found"),
   }),
 };
 
@@ -109,10 +137,10 @@ const bookingFormComponent: TamboComponent = {
     "Shows a booking form for a specific hotel. Use this when the user wants to book a hotel or says 'book', 'reserve', 'I'll take it', etc.",
   component: BookingForm,
   propsSchema: z.object({
-    hotel: HotelSchema.describe("The hotel to book"),
-    checkIn: z.string().describe("Check-in date (YYYY-MM-DD)"),
-    checkOut: z.string().describe("Check-out date (YYYY-MM-DD)"),
-    guests: z.number().describe("Number of guests"),
+    hotel: TamboHotelSchema.describe("The hotel to book"),
+    checkIn: z.string().default("").describe("Check-in date (YYYY-MM-DD)"),
+    checkOut: z.string().default("").describe("Check-out date (YYYY-MM-DD)"),
+    guests: z.number().default(1).describe("Number of guests"),
   }),
 };
 

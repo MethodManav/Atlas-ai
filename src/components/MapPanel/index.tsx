@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useAtlasStore } from "@/lib/store";
-import type { Hotel } from "@/lib/amadeus";
+import { getReviewScore, type Hotel } from "@/lib/hotels";
 import { MapSearchBar } from "@/components/MapSearchBar";
 
 // Set Mapbox token
@@ -131,6 +131,11 @@ export function MapPanel() {
       if (!hotel.lat || !hotel.lng) return;
 
       const isSelected = selectedHotelId === hotel.id;
+      const reviewScore = getReviewScore(hotel);
+      const ratingLine =
+        reviewScore != null
+          ? `⭐ ${reviewScore.toFixed(1)} guest rating`
+          : "";
       const el = createPinEl(hotel, isSelected);
 
       const marker = new mapboxgl.Marker({ element: el, anchor: "bottom" })
@@ -149,7 +154,7 @@ export function MapPanel() {
           .setHTML(
             `<div style="font-family:system-ui,sans-serif;padding:6px 2px;min-width:160px">
               <div style="font-weight:700;font-size:13px;margin-bottom:2px">${hotel.name}</div>
-              <div style="font-size:11px;color:#6b7280">⭐ ${hotel.reviewScore} · ${hotel.rating}★</div>
+              <div style="font-size:11px;color:#6b7280">${ratingLine}</div>
               <div style="font-size:12px;font-weight:600;color:#2563eb;margin-top:4px">$${hotel.price}/night</div>
             </div>`
           )

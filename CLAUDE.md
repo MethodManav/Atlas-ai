@@ -25,7 +25,7 @@ This is a **map + AI chat** hotel search and booking app. The two panels — a T
 User types in chat
   → Tambo AI calls searchHotels tool (src/lib/tambo.ts)
   → Tool POSTs to /api/hotels/search (src/app/api/hotels/search/route.ts)
-  → Route calls Amadeus API (src/lib/amadeus.ts) or falls back to mock data
+  → Route calls LiteAPI (src/lib/liteapi.ts)
   → Tool result returned to Tambo
   → Tambo renders <HotelResultsList> component inside the chat bubble
   → HotelResultsList useEffect calls setHotels() + setMapState()
@@ -51,12 +51,13 @@ Tambo is the AI layer. It auto-selects and renders registered React components b
 - **Hooks** — `useTambo()` exposes `messages`, `isStreaming`; `useTamboThreadInput()` exposes `value`, `setValue`, `submit`, `isPending`. `isPending` lives on `useTamboThreadInput`, not `useTambo`.
 - **System prompt** — `tamboSystemPrompt` in `tambo.ts` documents the intended prompt. Paste it into the Tambo dashboard at `app.tambo.co → Project Settings → Agent → Custom Instructions`. It is not passed via `TamboProvider` props (no such prop exists).
 
-### Amadeus integration (`src/lib/amadeus.ts`)
+### LiteAPI integration (`src/lib/liteapi.ts`)
 
-- Authenticates via OAuth2 client credentials; token is cached in module scope with a 1-minute expiry buffer.
-- `searchHotels()` does a two-step call: city → IATA code, then hotel list → offers/prices.
-- If `AMADEUS_CLIENT_ID` / `AMADEUS_CLIENT_SECRET` are absent, the API route automatically falls back to `getMockHotels()`. The mock includes 5 realistic hotels per city with hardcoded coordinates for ~8 major cities.
-- The Amadeus test environment (`test.api.amadeus.com`) is used; swap to `api.amadeus.com` for production.
+- Authenticates with `X-API-Key` header (`NEXT_PUBLIC_LITEAPI_API_KEY`). Sandbox keys start with `sand_`; production keys with `prod_`.
+- `searchHotels()` resolves city → country code, fetches hotel IDs via `/data/hotels`, then loads rates via `POST /hotels/rates`. Falls back to `aiSearch` when country is unknown.
+- `bookHotel()` runs the two-step LiteAPI flow: `POST /rates/prebook` (offerId) → `POST /rates/book` (prebookId + `ACC_CREDIT_CARD` for sandbox).
+- Shared types live in `src/lib/hotels.ts`. `NEXT_PUBLIC_LITEAPI_API_KEY` is required for search and booking.
+- API bases: search/data `https://api.liteapi.travel/v3.0`, booking `https://book.liteapi.travel/v3.0`.
 
 ### MapPanel (`src/components/MapPanel/index.tsx`)
 
@@ -76,8 +77,7 @@ Tambo is the AI layer. It auto-selects and renders registered React components b
 ```
 NEXT_PUBLIC_TAMBO_API_KEY      # Required for AI chat (get from app.tambo.co)
 NEXT_PUBLIC_MAPBOX_TOKEN       # Required for live map (get from account.mapbox.com)
-AMADEUS_CLIENT_ID              # Optional; falls back to mock hotels without it
-AMADEUS_CLIENT_SECRET          # Optional; falls back to mock hotels without it
+NEXT_PUBLIC_LITEAPI_API_KEY    # Required for hotel search/booking (get from dashboard.liteapi.travel)
 ```
 
 Copy `.env.local.example` to `.env.local` and fill in values.

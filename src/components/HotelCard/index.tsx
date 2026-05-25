@@ -1,12 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Star, MapPin, Wifi, Car, Utensils, Dumbbell, Waves, Sparkles } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAtlasStore } from "@/lib/store";
-import type { Hotel } from "@/lib/amadeus";
+import { getReviewScore, isValidImageUrl, type Hotel } from "@/lib/hotels";
 import { cn } from "@/lib/utils";
 
 interface HotelCardProps {
@@ -17,34 +17,19 @@ interface HotelCardProps {
   compact?: boolean;
 }
 
-const AMENITY_ICONS: Record<string, React.ReactNode> = {
-  WiFi: <Wifi className="w-3 h-3" />,
-  Parking: <Car className="w-3 h-3" />,
-  Restaurant: <Utensils className="w-3 h-3" />,
-  Gym: <Dumbbell className="w-3 h-3" />,
-  Pool: <Waves className="w-3 h-3" />,
-  Spa: <Sparkles className="w-3 h-3" />,
-};
+function formatPrice(amount: number, currency: string): string {
+  if (currency === "USD") return `$${amount}`;
+  return `${currency} ${amount}`;
+}
 
-function StarRating({ rating, score }: { rating: number; score: number }) {
+function GuestRating({ score }: { score: number | null }) {
+  if (score == null) return null;
   return (
     <div className="flex items-center gap-1.5">
-      <div className="flex">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={cn(
-              "w-3.5 h-3.5",
-              i < rating
-                ? "fill-amber-400 text-amber-400"
-                : "fill-muted text-muted"
-            )}
-          />
-        ))}
-      </div>
       <span className="text-xs font-semibold bg-emerald-500 text-white px-1.5 py-0.5 rounded">
         {score.toFixed(1)}
       </span>
+      <span className="text-xs text-muted-foreground">Guest rating</span>
     </div>
   );
 }
@@ -56,16 +41,22 @@ export function HotelCard({
   guests = 1,
   compact = false,
 }: HotelCardProps) {
-  const { setSelectedHotelId, setBookingHotel, setSearchContext, selectedHotelId } =
-    useAtlasStore();
+  const {
+    setSelectedHotelId,
+    setBookingHotel,
+    setSearchContext,
+    selectedHotelId,
+  } = useAtlasStore();
 
   const isSelected = selectedHotelId === hotel.id;
+  const reviewScore = getReviewScore(hotel);
+  const imageSrc = isValidImageUrl(hotel.imageUrl) ? hotel.imageUrl : null;
 
   const nights =
     checkIn && checkOut
       ? Math.ceil(
           (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-            86400000
+            86400000,
         )
       : 1;
 
@@ -84,7 +75,7 @@ export function HotelCard({
         "overflow-hidden transition-all duration-200 cursor-pointer border",
         isSelected
           ? "ring-2 ring-blue-500 shadow-lg shadow-blue-100"
-          : "hover:shadow-md hover:border-blue-200"
+          : "hover:shadow-md hover:border-blue-200",
       )}
       onMouseEnter={() => setSelectedHotelId(hotel.id)}
       onMouseLeave={() => setSelectedHotelId(null)}
@@ -94,30 +85,38 @@ export function HotelCard({
         <div
           className={cn(
             "relative overflow-hidden bg-muted flex-shrink-0",
-            compact ? "w-28 h-full min-h-[90px]" : "w-full h-40"
+            compact ? "w-28 h-full min-h-[90px]" : "w-full h-40",
           )}
         >
-          <Image
-            src={hotel.imageUrl}
-            alt={hotel.name}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-          <div className="absolute top-2 left-2">
-            <Badge
-              className={cn(
-                "text-xs font-semibold",
-                hotel.rating >= 5
-                  ? "bg-amber-500 text-white"
-                  : hotel.rating >= 4
-                  ? "bg-blue-500 text-white"
-                  : "bg-slate-500 text-white"
-              )}
-            >
-              {hotel.rating}★
-            </Badge>
-          </div>
+          {imageSrc ? (
+            <Image
+              src={imageSrc}
+              alt={hotel.name}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              No photo
+            </div>
+          )}
+          {reviewScore != null && (
+            <div className="absolute top-2 left-2">
+              <Badge
+                className={cn(
+                  "text-xs font-semibold",
+                  reviewScore >= 9
+                    ? "bg-amber-500 text-white"
+                    : reviewScore >= 8
+                      ? "bg-blue-500 text-white"
+                      : "bg-slate-500 text-white",
+                )}
+              >
+                {reviewScore.toFixed(1)}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Content */}
@@ -128,13 +127,15 @@ export function HotelCard({
             </h3>
             <div className="flex items-center gap-1 text-muted-foreground mt-0.5">
               <MapPin className="w-3 h-3 flex-shrink-0" />
-              <span className="text-xs line-clamp-1">{hotel.address || hotel.city}</span>
+              <span className="text-xs line-clamp-1">
+                {hotel.address || hotel.city}
+              </span>
             </div>
           </div>
 
-          <StarRating rating={hotel.rating} score={hotel.reviewScore} />
+          <GuestRating score={reviewScore} />
 
-          {!compact && hotel.amenities.length > 0 && (
+          {/* {!compact && hotel.amenities.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {hotel.amenities.slice(0, 4).map((amenity) => (
                 <Badge
@@ -152,19 +153,20 @@ export function HotelCard({
                 </Badge>
               )}
             </div>
-          )}
+          )} */}
 
           <div className="flex items-center justify-between mt-auto pt-1">
             <div>
               <div className="flex items-baseline gap-1">
                 <span className="font-bold text-base text-blue-600">
-                  ${hotel.price}
+                  {formatPrice(hotel.price, hotel.currency)}
                 </span>
                 <span className="text-xs text-muted-foreground">/night</span>
               </div>
               {nights > 1 && (
                 <div className="text-xs text-muted-foreground">
-                  ${totalPrice} total · {nights} nights
+                  {formatPrice(totalPrice, hotel.currency)} total · {nights}{" "}
+                  nights
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { bookHotel } from "@/lib/amadeus";
+import { bookHotel } from "@/lib/liteapi";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,16 +17,16 @@ export async function POST(req: NextRequest) {
       cardHolderName,
     } = body;
 
-    if (!hotelId || !guestFirstName || !guestLastName || !guestEmail) {
+    if (!hotelId || !offerId || !guestFirstName || !guestLastName || !guestEmail) {
       return NextResponse.json(
-        { error: "Missing required booking fields" },
+        { error: "Missing required booking fields (hotelId, offerId, guest details)" },
         { status: 400 }
       );
     }
 
     const confirmation = await bookHotel({
       hotelId,
-      offerId: offerId || "mock-offer",
+      offerId,
       guestFirstName,
       guestLastName,
       guestEmail,
