@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
+import type { ReactTamboThreadMessage } from "@tambo-ai/react";
 import { Send, Sparkles, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,12 +19,10 @@ const SUGGESTIONS = [
 ];
 
 export function ChatPanel() {
-  const { thread } = useTambo();
+  const { messages } = useTambo();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const messages = thread?.messages ?? [];
 
   // Auto-scroll to latest message
   useEffect(() => {
@@ -38,9 +37,8 @@ export function ChatPanel() {
 
   function handleSuggestion(text: string) {
     setValue(text);
-    setTimeout(() => {
-      submit();
-    }, 50);
+    // Small delay to allow setValue to propagate
+    setTimeout(() => submit(), 50);
   }
 
   return (
@@ -91,8 +89,20 @@ export function ChatPanel() {
           </div>
         ) : (
           <div className="space-y-4">
-            {messages.map((message) => {
+            {messages.map((message: ReactTamboThreadMessage) => {
               const isUser = message.role === "user";
+
+              // Extract text blocks
+              const textContent = message.content
+                .filter((c) => c.type === "text")
+                .map((c) => ("text" in c ? c.text : ""))
+                .join("");
+
+              // Extract rendered UI components (type === "component" in Tambo SDK)
+              const componentBlocks = message.content.filter(
+                (c) => c.type === "component"
+              );
+
               return (
                 <div
                   key={message.id}
@@ -110,18 +120,22 @@ export function ChatPanel() {
                           : "bg-slate-100 text-slate-600"
                       )}
                     >
-                      {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                      {isUser ? (
+                        <User className="w-3.5 h-3.5" />
+                      ) : (
+                        <Bot className="w-3.5 h-3.5" />
+                      )}
                     </AvatarFallback>
                   </Avatar>
 
                   <div
                     className={cn(
-                      "flex flex-col gap-1.5 max-w-[85%]",
+                      "flex flex-col gap-2 max-w-[88%]",
                       isUser ? "items-end" : "items-start"
                     )}
                   >
-                    {/* Text content */}
-                    {message.content && (
+                    {/* Text bubble */}
+                    {textContent && (
                       <div
                         className={cn(
                           "rounded-2xl px-3 py-2 text-sm leading-relaxed",
@@ -130,23 +144,21 @@ export function ChatPanel() {
                             : "bg-slate-100 dark:bg-slate-800 text-foreground rounded-tl-sm"
                         )}
                       >
-                        {typeof message.content === "string"
-                          ? message.content
-                          : Array.isArray(message.content)
-                          ? message.content
-                              .filter((c: {type: string}) => c.type === "text")
-                              .map((c: {type: string; text?: string}) => c.text)
-                              .join("")
-                          : null}
+                        {textContent}
                       </div>
                     )}
 
-                    {/* Rendered UI components (hotel cards, booking form, etc.) */}
-                    {message.renderedComponent && (
-                      <div className="w-full">
-                        {message.renderedComponent}
-                      </div>
-                    )}
+                    {/* Rendered Tambo UI components (hotel cards, booking form, etc.) */}
+                    {componentBlocks.map((block, i) => {
+                      if ("renderedComponent" in block && block.renderedComponent) {
+                        return (
+                          <div key={i} className="w-full">
+                            {block.renderedComponent}
+                          </div>
+                        );
+                      }
+                      return null;
+                    })}
                   </div>
                 </div>
               );
@@ -206,7 +218,7 @@ export function ChatPanel() {
         </p>
       </div>
 
-      {/* Booking drawer (slides up from bottom of chat) */}
+      {/* Booking drawer */}
       <BookingDrawer />
     </div>
   );
