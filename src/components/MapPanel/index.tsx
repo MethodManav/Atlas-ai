@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useAtlasStore } from "@/lib/store";
 import type { Hotel } from "@/lib/amadeus";
+import { MapSearchBar } from "@/components/MapSearchBar";
 
 // Set Mapbox token
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
@@ -38,8 +39,9 @@ export function MapPanel() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const popupRef = useRef<mapboxgl.Popup | null>(null);
+  const locationPinRef = useRef<mapboxgl.Marker | null>(null);
 
-  const { hotels, selectedHotelId, mapState, setSelectedHotelId, setBookingHotel, searchContext } =
+  const { hotels, selectedHotelId, mapState, setSelectedHotelId, setBookingHotel, searchContext, searchedLocation } =
     useAtlasStore();
 
   // Init map
@@ -51,7 +53,7 @@ export function MapPanel() {
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: mapState.center,
       zoom: mapState.zoom,
     });
@@ -77,6 +79,45 @@ export function MapPanel() {
       essential: true,
     });
   }, [mapState]);
+
+  // Drop / remove the location pin when searchedLocation changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Remove previous pin
+    locationPinRef.current?.remove();
+    locationPinRef.current = null;
+
+    if (!searchedLocation) return;
+
+    // Build a custom teardrop pin element
+    const el = document.createElement("div");
+    el.style.cssText = `
+      width: 28px;
+      height: 28px;
+      cursor: default;
+    `;
+    el.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" width="28" height="28">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5" fill="white"/>
+      </svg>
+    `;
+
+    locationPinRef.current = new mapboxgl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat(searchedLocation.center)
+      .setPopup(
+        new mapboxgl.Popup({ offset: 28, closeButton: false, className: "atlas-popup" }).setHTML(
+          `<div style="font-family:system-ui,sans-serif;padding:4px 2px;font-size:12px;font-weight:600;color:#1e293b">
+            📍 ${searchedLocation.name}
+          </div>`
+        )
+      )
+      .addTo(mapRef.current);
+
+    // Show the popup immediately
+    locationPinRef.current.getPopup()?.addTo(mapRef.current);
+  }, [searchedLocation]);
 
   // Render hotel markers
   const renderMarkers = useCallback(() => {
@@ -140,6 +181,10 @@ export function MapPanel() {
   if (!MAPBOX_TOKEN) {
     return (
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-slate-100 flex flex-col items-center justify-center gap-4 p-8 text-center">
+        {/* Search bar overlay — works even without a Mapbox token */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-32px)] max-w-[420px]">
+          <MapSearchBar />
+        </div>
         <div className="text-6xl">🗺️</div>
         <div>
           <h2 className="text-xl font-bold text-slate-700">Map Preview</h2>
@@ -179,6 +224,11 @@ export function MapPanel() {
   return (
     <div className="absolute inset-0">
       <div ref={mapContainerRef} className="w-full h-full" />
+
+      {/* Floating search bar — centered at top, above map canvas */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-160px)] max-w-[420px]">
+        <MapSearchBar />
+      </div>
 
       {/* Search context overlay */}
       {searchContext.city && (

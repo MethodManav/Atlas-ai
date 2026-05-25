@@ -31,6 +31,10 @@ interface AtlasStore {
     guests?: number;
   };
   setSearchContext: (ctx: Partial<AtlasStore["searchContext"]>) => void;
+
+  // Location pin dropped by the map search bar
+  searchedLocation: { center: [number, number]; name: string } | null;
+  setSearchedLocation: (loc: { center: [number, number]; name: string } | null) => void;
 }
 
 export const useAtlasStore = create<AtlasStore>((set) => ({
@@ -43,11 +47,15 @@ export const useAtlasStore = create<AtlasStore>((set) => ({
   bookingHotel: null,
   setBookingHotel: (hotel) => set({ bookingHotel: hotel }),
 
-  mapState: { center: [2.3522, 48.8566], zoom: 12 },
+  // Default location: Surat, India
+  mapState: { center: [72.8311, 21.1702], zoom: 12 },
   setMapState: (s) =>
     set((state) => ({ mapState: { ...state.mapState, ...s } })),
 
   searchContext: {},
   setSearchContext: (ctx) =>
     set((state) => ({ searchContext: { ...state.searchContext, ...ctx } })),
+
+  searchedLocation: null,
+  setSearchedLocation: (loc) => set({ searchedLocation: loc }),
 }));
