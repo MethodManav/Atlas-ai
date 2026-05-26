@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import type { ReactTamboThreadMessage } from "@tambo-ai/react";
-import { Send, Sparkles, Bot, User } from "lucide-react";
+import { Send, Sparkles, Bot, User, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -19,105 +18,155 @@ const SUGGESTIONS = [
 ];
 
 export function ChatPanel() {
-  const { messages } = useTambo();
+  const { messages, startNewThread } = useTambo();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
 
   // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Fire submit once the suggestion value has been committed to state
+  useEffect(() => {
+    if (pendingSuggestion === null) return;
+    if (value !== pendingSuggestion) return;
+    setPendingSuggestion(null);
+    submit().catch(handleSubmitError);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, pendingSuggestion]);
+
+  const handleSubmitError = useCallback(
+    (err: unknown) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("invalid_previous_run")) {
+        console.warn("[Atlas] previousRunId mismatch — resetting to new thread");
+        startNewThread();
+      } else {
+        console.error("[Atlas] submit error:", err);
+      }
+    },
+    [startNewThread],
+  );
+
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!value.trim() || isPending) return;
-    submit();
+    submit().catch(handleSubmitError);
   }
 
   function handleSuggestion(text: string) {
     setValue(text);
-    // Small delay to allow setValue to propagate
-    setTimeout(() => submit(), 50);
+    setPendingSuggestion(text);
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-white dark:bg-slate-900">
-        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-white" />
+    <div className="flex flex-col h-full atlas-mesh-bg atlas-noise overflow-hidden">
+      {/* ── Header ────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3.5 relative overflow-hidden bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 shadow-lg">
+        {/* Subtle noise layer on header */}
+        <div
+          className="absolute inset-0 opacity-[0.06] pointer-events-none"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+
+        {/* Logo mark */}
+        <div className="relative w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0 ring-1 ring-white/25 shadow-inner">
+          <Sparkles className="w-5 h-5 text-white" />
         </div>
-        <div>
-          <h1 className="font-bold text-sm leading-tight">Atlas AI</h1>
-          <p className="text-xs text-muted-foreground">Hotel Concierge</p>
+
+        <div className="relative">
+          <h1 className="font-bold text-sm leading-tight text-white tracking-tight">
+            Atlas AI
+          </h1>
+          <p className="text-xs text-blue-200 font-medium">Hotel Concierge</p>
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs text-emerald-600 font-medium">Online</span>
+
+        {/* Online badge */}
+        <div className="relative ml-auto flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-3 py-1.5 ring-1 ring-white/20">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] animate-pulse" />
+          <span className="text-xs text-white/90 font-semibold">Online</span>
         </div>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 px-3 py-4">
+      {/* ── Messages ──────────────────────────────────────────────── */}
+      <ScrollArea className="flex-1 px-3 py-4 atlas-scrollbar">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center gap-6 py-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-50 dark:bg-blue-950 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-blue-500" />
+          /* Empty state */
+          <div className="flex flex-col items-center gap-5 py-10 text-center animate-atlas-fade-in">
+            {/* Floating icon */}
+            <div className="relative">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-400/30 animate-atlas-float">
+                <Compass className="w-10 h-10 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg">
+                <Sparkles className="w-3.5 h-3.5 text-white" />
+              </div>
             </div>
+
             <div>
-              <h2 className="font-bold text-base">Welcome to Atlas AI</h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-[220px]">
-                Your personal hotel concierge. Search, compare, and book hotels
-                through conversation.
+              <h2 className="font-bold text-base text-slate-800 tracking-tight">
+                Welcome to Atlas AI
+              </h2>
+              <p className="text-sm text-slate-500 mt-1.5 max-w-[210px] leading-relaxed">
+                Your personal concierge for hotels worldwide. Search, compare,
+                and book through conversation.
               </p>
             </div>
+
             <div className="w-full space-y-2">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest mb-3">
                 Try asking
               </p>
-              {SUGGESTIONS.map((s) => (
+              {SUGGESTIONS.map((s, i) => (
                 <button
                   key={s}
                   onClick={() => handleSuggestion(s)}
-                  className="w-full text-left text-xs bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 border hover:border-blue-300 rounded-lg px-3 py-2.5 transition-colors"
+                  className="w-full text-left text-xs bg-white/80 backdrop-blur-sm hover:bg-blue-50 border border-slate-200/80 hover:border-blue-300 rounded-2xl px-4 py-3 transition-all duration-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 group animate-atlas-scale-in"
+                  style={{ animationDelay: `${i * 70}ms` }}
                 >
-                  {s}
+                  <span className="text-slate-600 group-hover:text-blue-700 font-medium transition-colors">
+                    {s}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-2">
             {messages.map((message: ReactTamboThreadMessage) => {
               const isUser = message.role === "user";
 
-              // Extract text blocks
               const textContent = message.content
                 .filter((c) => c.type === "text")
                 .map((c) => ("text" in c ? c.text : ""))
                 .join("");
 
-              // Extract rendered UI components (type === "component" in Tambo SDK)
               const componentBlocks = message.content.filter(
-                (c) => c.type === "component"
+                (c) => c.type === "component",
               );
 
               return (
                 <div
                   key={message.id}
                   className={cn(
-                    "flex gap-2",
-                    isUser ? "flex-row-reverse" : "flex-row"
+                    "flex gap-2 chat-message-enter",
+                    isUser ? "flex-row-reverse" : "flex-row",
                   )}
                 >
-                  <Avatar className="w-7 h-7 flex-shrink-0 mt-0.5">
+                  {/* Avatar */}
+                  <Avatar className="w-7 h-7 flex-shrink-0 mt-0.5 ring-2 ring-white shadow-sm">
                     <AvatarFallback
                       className={cn(
                         "text-xs",
                         isUser
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-100 text-slate-600"
+                          ? "bg-gradient-to-br from-blue-500 to-blue-700 text-white"
+                          : "bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600",
                       )}
                     >
                       {isUser ? (
@@ -131,28 +180,31 @@ export function ChatPanel() {
                   <div
                     className={cn(
                       "flex flex-col gap-2 max-w-[88%]",
-                      isUser ? "items-end" : "items-start"
+                      isUser ? "items-end" : "items-start",
                     )}
                   >
                     {/* Text bubble */}
                     {textContent && (
                       <div
                         className={cn(
-                          "rounded-2xl px-3 py-2 text-sm leading-relaxed",
+                          "rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
                           isUser
-                            ? "bg-blue-600 text-white rounded-tr-sm"
-                            : "bg-slate-100 dark:bg-slate-800 text-foreground rounded-tl-sm"
+                            ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-sm shadow-blue-200"
+                            : "bg-white text-slate-800 rounded-tl-sm border border-slate-100/80",
                         )}
                       >
                         {textContent}
                       </div>
                     )}
 
-                    {/* Rendered Tambo UI components (hotel cards, booking form, etc.) */}
+                    {/* Rendered Tambo UI components */}
                     {componentBlocks.map((block, i) => {
-                      if ("renderedComponent" in block && block.renderedComponent) {
+                      if (
+                        "renderedComponent" in block &&
+                        block.renderedComponent
+                      ) {
                         return (
-                          <div key={i} className="w-full">
+                          <div key={i} className="w-full animate-atlas-scale-in">
                             {block.renderedComponent}
                           </div>
                         );
@@ -166,17 +218,17 @@ export function ChatPanel() {
 
             {/* Typing indicator */}
             {isPending && (
-              <div className="flex gap-2">
-                <Avatar className="w-7 h-7 flex-shrink-0">
-                  <AvatarFallback className="bg-slate-100 text-slate-600 text-xs">
+              <div className="flex gap-2 chat-message-enter">
+                <Avatar className="w-7 h-7 flex-shrink-0 ring-2 ring-white shadow-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 text-xs">
                     <Bot className="w-3.5 h-3.5" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm px-3 py-2.5">
-                  <div className="flex gap-1 items-center">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:300ms]" />
+                <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-slate-100/80">
+                  <div className="flex gap-1.5 items-center">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:140ms]" />
+                    <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:280ms]" />
                   </div>
                 </div>
               </div>
@@ -187,34 +239,51 @@ export function ChatPanel() {
         )}
       </ScrollArea>
 
-      {/* Input */}
-      <div className="p-3 border-t bg-white dark:bg-slate-900">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            ref={inputRef}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="Search hotels, ask questions..."
-            disabled={isPending}
-            className="flex-1 h-9 text-sm"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSubmit();
-              }
-            }}
-          />
+      {/* ── Input ─────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-3 pt-3 pb-4 border-t border-slate-200/70 bg-white/90 backdrop-blur-sm">
+        <form onSubmit={handleSubmit} className="flex gap-2 items-center">
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="Search hotels, ask anything…"
+              disabled={isPending}
+              className={cn(
+                "w-full h-11 rounded-2xl px-4 text-sm bg-slate-50 border border-slate-200",
+                "placeholder-slate-400 text-slate-800",
+                "focus:outline-none focus:ring-2 focus:ring-blue-400/40 focus:border-blue-400",
+                "disabled:opacity-50 transition-all duration-200",
+                "shadow-sm",
+              )}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+            />
+          </div>
           <Button
             type="submit"
             disabled={!value.trim() || isPending}
             size="sm"
-            className="h-9 w-9 p-0 bg-blue-600 hover:bg-blue-700"
+            className={cn(
+              "h-11 w-11 p-0 rounded-2xl flex-shrink-0",
+              "bg-gradient-to-br from-blue-600 to-indigo-600",
+              "hover:from-blue-700 hover:to-indigo-700",
+              "shadow-md hover:shadow-blue-400/40",
+              "disabled:opacity-40 disabled:shadow-none",
+              "transition-all duration-200 atlas-btn-shine",
+            )}
           >
             <Send className="w-4 h-4" />
           </Button>
         </form>
-        <p className="text-xs text-muted-foreground text-center mt-1.5">
-          Powered by Atlas AI · Tambo
+        <p className="text-[10px] text-slate-400 text-center mt-2 font-medium tracking-wide">
+          Powered by{" "}
+          <span className="text-blue-500 font-semibold">Atlas AI</span> ·
+          Tambo
         </p>
       </div>
 

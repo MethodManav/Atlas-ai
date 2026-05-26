@@ -17,23 +17,40 @@ export function BookingDrawer() {
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
   return (
-    <Sheet open={!!bookingHotel} onOpenChange={(open) => !open && setBookingHotel(null)}>
+    <Sheet
+      open={!!bookingHotel}
+      onOpenChange={(open) => !open && setBookingHotel(null)}
+    >
       <SheetContent
         side="bottom"
-        className="h-auto max-h-[90vh] rounded-t-2xl px-4 pt-4 pb-6 overflow-y-auto"
+        className="h-auto max-h-[92vh] rounded-t-3xl px-4 pt-0 pb-6 overflow-y-auto border-0 shadow-2xl"
       >
-        <SheetHeader className="flex flex-row items-center justify-between mb-4">
-          <SheetTitle className="text-base">Book your stay</SheetTitle>
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-10 h-1 rounded-full bg-slate-200" />
+        </div>
+
+        <SheetHeader className="flex flex-row items-center justify-between mb-4 px-1">
+          <div>
+            <SheetTitle className="text-base font-bold text-slate-800">
+              Book your stay
+            </SheetTitle>
+            {bookingHotel && (
+              <p className="text-xs text-slate-400 mt-0.5 font-medium truncate max-w-[220px]">
+                {bookingHotel.name}
+              </p>
+            )}
+          </div>
           <button
             onClick={() => setBookingHotel(null)}
-            className="w-7 h-7 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-slate-500" />
           </button>
         </SheetHeader>
 
         {bookingHotel && (
-          <div className="flex justify-center">
+          <div className="flex justify-center animate-atlas-slide-up">
             <BookingForm
               hotel={bookingHotel}
               checkIn={searchContext.checkIn ?? today}

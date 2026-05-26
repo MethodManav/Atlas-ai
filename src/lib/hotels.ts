@@ -113,6 +113,14 @@ export interface SearchParams {
   maxPrice?: number;
   minRating?: number; // stars
   countryCode?: string; // ISO-2, optional override
+  cursor?: number; // offset into hotel ID list for pagination (default 0)
+  limit?: number; // page size (default 20)
+}
+
+export interface SearchResult {
+  hotels: Hotel[];
+  nextCursor: number | null; // null = no more pages
+  totalFound: number; // total hotel IDs available (city list size)
 }
 
 export interface BookingParams {

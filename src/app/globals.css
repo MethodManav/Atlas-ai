@@ -128,3 +128,152 @@
     @apply font-sans;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Atlas AI — Design System Extensions
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Keyframe Animations ────────────────────────────────────── */
+@keyframes atlas-slide-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes atlas-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes atlas-scale-in {
+  from { opacity: 0; transform: scale(0.91); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes atlas-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+@keyframes atlas-shimmer {
+  0%   { background-position: -300% center; }
+  100% { background-position:  300% center; }
+}
+@keyframes atlas-badge-pop {
+  0%   { transform: scale(0.7); opacity: 0; }
+  70%  { transform: scale(1.1); }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes atlas-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.30); }
+  50%       { box-shadow: 0 0 0 7px rgba(37, 99, 235, 0); }
+}
+
+/* ── Animation Utility Classes ──────────────────────────────── */
+.animate-atlas-slide-up  { animation: atlas-slide-up  0.38s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-atlas-fade-in   { animation: atlas-fade-in   0.32s ease both; }
+.animate-atlas-scale-in  { animation: atlas-scale-in  0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-atlas-float     { animation: atlas-float     3.6s ease-in-out infinite; }
+.animate-atlas-badge-pop { animation: atlas-badge-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.animate-atlas-glow      { animation: atlas-glow      2.2s ease-in-out infinite; }
+
+/* ── Glassmorphism ──────────────────────────────────────────── */
+.atlas-glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+}
+.atlas-glass-dark {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Noise Texture Overlay ──────────────────────────────────── */
+/* Apply .atlas-noise to any wrapper — adds a subtle organic grain */
+.atlas-noise {
+  position: relative;
+  isolation: isolate;
+}
+.atlas-noise::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.038'/%3E%3C/svg%3E");
+}
+.atlas-noise > * { position: relative; z-index: 1; }
+
+/* ── Dot-Grid Background ────────────────────────────────────── */
+.atlas-dot-grid {
+  background-color: #f9fafb;
+  background-image: radial-gradient(circle, #d1d5db 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ── Gradient Mesh Background (chat area) ───────────────────── */
+.atlas-mesh-bg {
+  background-color: #f8faff;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 10% 15%, rgba(219, 234, 254, 0.55) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 90% 85%, rgba(224, 231, 255, 0.45) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.9) 0%, transparent 100%);
+}
+
+/* ── Shimmer (loading skeleton) ─────────────────────────────── */
+.atlas-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(240,240,240,1) 25%,
+    rgba(220,220,220,1) 50%,
+    rgba(240,240,240,1) 75%
+  );
+  background-size: 300% 100%;
+  animation: atlas-shimmer 1.6s linear infinite;
+}
+
+/* ── Custom Scrollbar ───────────────────────────────────────── */
+.atlas-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.atlas-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.atlas-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+.atlas-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── Mapbox Popup Override ──────────────────────────────────── */
+.atlas-popup .mapboxgl-popup-content {
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  background: white !important;
+}
+.atlas-popup .mapboxgl-popup-tip {
+  border-top-color: white !important;
+}
+
+/* ── Map Pin hover glow ─────────────────────────────────────── */
+.hotel-pin:hover {
+  transform: scale(1.12) !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45) !important;
+}
+
+/* ── Chat message entrance ──────────────────────────────────── */
+.chat-message-enter {
+  animation: atlas-slide-up 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Gradient shine on buttons ──────────────────────────────── */
+.atlas-btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.atlas-btn-shine::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s;
+}
+.atlas-btn-shine:hover::after {
+  left: 150%;
+}

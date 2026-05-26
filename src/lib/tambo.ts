@@ -10,30 +10,30 @@ import { BookingConfirmation } from "@/components/BookingConfirmation";
 export const TamboHotelSchema = z.object({
   id: z.string().describe("Hotel ID"),
   name: z.string().describe("Hotel name"),
-  rating: z.number().optional().describe("Star rating 1–5"),
+  rating: z.number().nullish().describe("Star rating 1–5"),
   reviewScore: z
     .number()
-    .optional()
+    .nullish()
     .describe("Guest review score 0–10"),
-  reviewCount: z.number().optional(),
-  price: z.number().optional().describe("Price per night"),
-  currency: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
-  latitude: z.number().optional().describe("Same as lat"),
-  longitude: z.number().optional().describe("Same as lng"),
-  amenities: z.array(z.string()).optional(),
-  imageUrl: z.string().optional(),
-  main_photo: z.string().optional().describe("Photo URL from LiteAPI"),
-  thumbnail: z.string().optional(),
-  description: z.string().optional(),
-  available: z.boolean().optional(),
+  reviewCount: z.number().nullish(),
+  price: z.number().nullish().describe("Price per night"),
+  currency: z.string().nullish(),
+  address: z.string().nullish(),
+  city: z.string().nullish(),
+  country: z.string().nullish(),
+  lat: z.number().nullish(),
+  lng: z.number().nullish(),
+  latitude: z.number().nullish().describe("Same as lat"),
+  longitude: z.number().nullish().describe("Same as lng"),
+  amenities: z.array(z.string()).nullish(),
+  imageUrl: z.string().nullish(),
+  main_photo: z.string().nullish().describe("Photo URL from LiteAPI"),
+  thumbnail: z.string().nullish(),
+  description: z.string().nullish(),
+  available: z.boolean().nullish(),
   offerId: z
     .string()
-    .optional()
+    .nullish()
     .describe("LiteAPI offer ID — required for booking"),
 });
 
@@ -83,6 +83,7 @@ const searchHotelsTool: TamboTool = {
       checkIn: data.checkIn ?? params.checkIn,
       checkOut: data.checkOut ?? params.checkOut,
       totalFound: data.totalFound ?? 0,
+      nextCursor: data.nextCursor ?? null,
     };
   },
   inputSchema: SearchParamsSchema,
@@ -92,6 +93,7 @@ const searchHotelsTool: TamboTool = {
     checkIn: z.string(),
     checkOut: z.string(),
     totalFound: z.number(),
+    nextCursor: z.number().nullable(),
   }),
 };
 
@@ -124,10 +126,15 @@ const hotelResultsComponent: TamboComponent = {
       .describe(
         "Hotels from searchHotels — pass the tool result hotels array unchanged",
       ),
-    city: z.string().default("").describe("City name for the search"),
-    checkIn: z.string().default("").describe("Check-in date YYYY-MM-DD"),
-    checkOut: z.string().default("").describe("Check-out date YYYY-MM-DD"),
-    totalFound: z.number().default(0).describe("Total number of hotels found"),
+    city: z.string().nullish().default("").describe("City name for the search"),
+    checkIn: z.string().nullish().default("").describe("Check-in date YYYY-MM-DD"),
+    checkOut: z.string().nullish().default("").describe("Check-out date YYYY-MM-DD"),
+    totalFound: z.number().nullish().default(0).describe("Total number of hotels found"),
+    nextCursor: z
+      .number()
+      .nullable()
+      .default(null)
+      .describe("Cursor for next page of results — null if no more pages"),
   }),
 };
 

@@ -154,9 +154,10 @@ export function MapSearchBar() {
       <form onSubmit={handleSubmit}>
         <div
           className={cn(
-            "relative flex items-center bg-white rounded-full h-11 px-4 gap-2",
-            "shadow-[0_2px_8px_rgba(0,0,0,0.25)] ring-1 ring-black/5",
-            "transition-shadow focus-within:shadow-[0_2px_12px_rgba(0,0,0,0.35)]"
+            "relative flex items-center rounded-full h-11 px-4 gap-2",
+            "atlas-glass",
+            "shadow-[0_4px_24px_rgba(0,0,0,0.20)] ring-1 ring-black/5",
+            "transition-all duration-200 focus-within:shadow-[0_4px_28px_rgba(37,99,235,0.22)] focus-within:ring-blue-300/40"
           )}
         >
           {/* Left icon: spinner while locating/fetching, magnifier otherwise */}
@@ -218,7 +219,7 @@ export function MapSearchBar() {
 
       {/* Autocomplete dropdown */}
       {isDropdownOpen && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-2xl shadow-xl ring-1 ring-black/5 overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 atlas-glass rounded-2xl shadow-2xl shadow-slate-900/12 ring-1 ring-black/5 overflow-hidden z-50 animate-atlas-scale-in">
           {suggestions.map((suggestion, i) => (
             <button
               key={suggestion.id}

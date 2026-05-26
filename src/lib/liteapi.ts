@@ -4,6 +4,7 @@
 import {
   type Hotel,
   type SearchParams,
+  type SearchResult,
   type BookingParams,
   type BookingConfirmation,
   hotelPlaceholderImage,
@@ -146,7 +147,7 @@ interface LiteRatesResponse {
 async function fetchHotelList(
   countryCode: string,
   cityName: string,
-  limit = 20,
+  limit = 100,
 ): Promise<LiteHotelMeta[]> {
   const url = new URL(`${API_BASE}/data/hotels`);
   url.searchParams.set("countryCode", countryCode);
@@ -311,12 +312,18 @@ function mapRateToHotel(
 async function searchByCity(
   params: SearchParams,
   countryCode: string,
-): Promise<Hotel[]> {
-  const hotelList = await fetchHotelList(countryCode, params.city, 20);
-  if (!hotelList.length) return [];
+): Promise<SearchResult> {
+  const PAGE = params.limit ?? 20;
+  const cursor = params.cursor ?? 0;
 
-  const hotelIds = hotelList.map((h) => h.id);
-  const metaById = new Map(hotelList.map((h) => [h.id, h]));
+  const hotelList = await fetchHotelList(countryCode, params.city, 100);
+  if (!hotelList.length) return { hotels: [], nextCursor: null, totalFound: 0 };
+
+  const pageList = hotelList.slice(cursor, cursor + PAGE);
+  if (!pageList.length) return { hotels: [], nextCursor: null, totalFound: hotelList.length };
+
+  const hotelIds = pageList.map((h) => h.id);
+  const metaById = new Map(pageList.map((h) => [h.id, h]));
 
   const { rateHotels, hotelsMeta } = await fetchRates(
     buildRatesBody(params, { hotelIds, includeHotelData: true }),
@@ -332,10 +339,12 @@ async function searchByCity(
     const mapped = mapRateToHotel(rateHotel, meta, params);
     if (mapped) hotels.push(mapped);
   }
-  return dedupeHotels(hotels);
+
+  const nextCursor = cursor + PAGE < hotelList.length ? cursor + PAGE : null;
+  return { hotels: dedupeHotels(hotels), nextCursor, totalFound: hotelList.length };
 }
 
-async function searchByAi(params: SearchParams): Promise<Hotel[]> {
+async function searchByAi(params: SearchParams): Promise<SearchResult> {
   const { rateHotels, hotelsMeta } = await fetchRates(
     buildRatesBody(params, {
       aiSearch: `hotels in ${params.city}`,
@@ -352,25 +361,31 @@ async function searchByAi(params: SearchParams): Promise<Hotel[]> {
       ),
     )
     .filter((h): h is Hotel => h !== null);
-  return dedupeHotels(hotels);
+  const deduped = dedupeHotels(hotels);
+  return { hotels: deduped, nextCursor: null, totalFound: deduped.length };
 }
 
 // ─── Hotel Search ─────────────────────────────────────────────────────────────
 
-export async function searchHotels(params: SearchParams): Promise<Hotel[]> {
+export async function searchHotels(params: SearchParams): Promise<SearchResult> {
   getApiKey(); // validate env is set
 
   const countryCode = resolveCountryCode(params.city, params.countryCode);
-  let hotels: Hotel[] = [];
+  const cursor = params.cursor ?? 0;
 
   if (countryCode) {
-    hotels = await searchByCity(params, countryCode);
+    const result = await searchByCity(params, countryCode);
+    // If page 1 returns hotels, use them. On subsequent pages skip AI fallback.
+    if (result.hotels.length > 0 || cursor > 0) {
+      console.log(result.hotels, "searchHotels (city) results");
+      return result;
+    }
   }
-  if (!hotels.length) {
-    hotels = await searchByAi(params);
-  }
-  console.log(hotels, "searchHotels results");
-  return dedupeHotels(hotels);
+
+  // AI fallback — no predictable ID list, so no pagination support
+  const aiResult = await searchByAi(params);
+  console.log(aiResult.hotels, "searchHotels (ai) results");
+  return aiResult;
 }
 
 // ─── Hotel Booking ────────────────────────────────────────────────────────────

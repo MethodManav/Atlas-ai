@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     console.log("Received hotel search request", body);
-    const { city, checkIn, checkOut, guests, rooms, maxPrice, minRating } =
+    const { city, checkIn, checkOut, guests, rooms, maxPrice, minRating, cursor } =
       body;
 
     if (!city) {
@@ -25,16 +25,18 @@ export async function POST(req: NextRequest) {
       rooms: rooms || 1,
       maxPrice,
       minRating,
+      cursor: typeof cursor === "number" ? cursor : undefined,
     };
 
-    const hotels = await searchHotels(params);
+    const result = await searchHotels(params);
 
     return NextResponse.json({
-      hotels,
+      hotels: result.hotels,
       city,
       checkIn: params.checkIn,
       checkOut: params.checkOut,
-      totalFound: hotels.length,
+      totalFound: result.totalFound,
+      nextCursor: result.nextCursor,
     });
   } catch (error) {
     console.error("Hotel search error:", error);

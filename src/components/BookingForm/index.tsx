@@ -93,26 +93,26 @@ export function BookingForm({
   }
 
   return (
-    <div className="w-full max-w-sm rounded-xl border bg-background shadow-sm overflow-hidden">
+    <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 overflow-hidden">
       {/* Hotel summary */}
-      <div className="bg-blue-50 dark:bg-blue-950 px-4 py-3 flex items-start justify-between gap-3">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3.5 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{hotel.name}</p>
-          <p className="text-xs text-muted-foreground">
+          <p className="font-bold text-sm truncate text-white">{hotel.name}</p>
+          <p className="text-xs text-blue-200 mt-0.5">
             {checkIn} → {checkOut}
           </p>
-          <div className="flex gap-1.5 mt-1">
-            <Badge variant="secondary" className="text-xs">
+          <div className="flex gap-1.5 mt-1.5">
+            <Badge className="text-[10px] bg-white/20 text-white border-0 hover:bg-white/30">
               {nights} night{nights !== 1 ? "s" : ""}
             </Badge>
-            <Badge variant="secondary" className="text-xs">
+            <Badge className="text-[10px] bg-white/20 text-white border-0 hover:bg-white/30">
               {guests} guest{guests !== 1 ? "s" : ""}
             </Badge>
           </div>
         </div>
-        <div className="text-right">
-          <p className="font-bold text-blue-600">${total}</p>
-          <p className="text-xs text-muted-foreground">total</p>
+        <div className="text-right flex-shrink-0">
+          <p className="font-bold text-lg text-white">${total}</p>
+          <p className="text-[10px] text-blue-200 font-medium">total</p>
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export function BookingForm({
               />
             </div>
             <Button
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-blue-300/50 transition-all atlas-btn-shine"
               disabled={!form.firstName || !form.lastName || !form.email}
               onClick={() => setStep("payment")}
             >
@@ -260,7 +260,7 @@ export function BookingForm({
                 Back
               </Button>
               <Button
-                className="flex-1 bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-8 text-xs shadow-md hover:shadow-blue-300/40 transition-all atlas-btn-shine"
                 disabled={
                   !form.cardNumber ||
                   !form.cardExpiry ||
