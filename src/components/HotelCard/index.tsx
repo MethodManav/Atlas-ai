@@ -38,6 +38,7 @@ export function HotelCard({
     setSelectedHotelId,
     setBookingHotel,
     setSearchContext,
+    setMapState,
     selectedHotelId,
   } = useAtlasStore();
 
@@ -74,6 +75,12 @@ export function HotelCard({
       )}
       onMouseEnter={() => setSelectedHotelId(hotel.id)}
       onMouseLeave={() => setSelectedHotelId(null)}
+      onClick={() => {
+        setSelectedHotelId(hotel.id);
+        if (hotel.lat && hotel.lng) {
+          setMapState({ center: [hotel.lng, hotel.lat], zoom: 15 });
+        }
+      }}
     >
       <div className={cn("flex", compact ? "flex-row" : "flex-col")}>
         {/* ── Image ─────────────────────────────────────────────── */}

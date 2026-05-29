@@ -309,6 +309,28 @@ function mapRateToHotel(
   return mapped;
 }
 
+async function resolveCountryCodeFromNominatim(
+  cityName: string,
+): Promise<string | null> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("city", cityName);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+  url.searchParams.set("addressdetails", "1");
+
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { "User-Agent": "Atlas-ai/1.0" },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const code = json[0]?.address?.country_code;
+    return code ? (code as string).toUpperCase() : null;
+  } catch {
+    return null;
+  }
+}
+
 async function searchByCity(
   params: SearchParams,
   countryCode: string,
@@ -370,8 +392,14 @@ async function searchByAi(params: SearchParams): Promise<SearchResult> {
 export async function searchHotels(params: SearchParams): Promise<SearchResult> {
   getApiKey(); // validate env is set
 
-  const countryCode = resolveCountryCode(params.city, params.countryCode);
+  let countryCode = resolveCountryCode(params.city, params.countryCode);
   const cursor = params.cursor ?? 0;
+
+  // Dynamically resolve country code for any city not in the local map
+  if (!countryCode) {
+    countryCode =
+      (await resolveCountryCodeFromNominatim(params.city)) ?? undefined;
+  }
 
   if (countryCode) {
     const result = await searchByCity(params, countryCode);

@@ -13,35 +13,28 @@ function createPinEl(hotel: Hotel, isSelected: boolean): HTMLElement {
   const el = document.createElement("div");
   el.className = "hotel-pin";
 
-  const bg = isSelected
-    ? "linear-gradient(135deg,#2563eb,#4f46e5)"
-    : "#ffffff";
-  const color = isSelected ? "#ffffff" : "#2563eb";
-  const border = isSelected ? "#4f46e5" : "#2563eb";
-  const shadow = isSelected
-    ? "0 4px 18px rgba(37,99,235,0.50)"
-    : "0 2px 10px rgba(0,0,0,0.16)";
-  const scale = isSelected ? "1.18" : "1";
+  // Use different physical SVG sizes so Mapbox anchor stays accurate (no CSS scale)
+  const w = isSelected ? 36 : 28;
+  const h = isSelected ? 48 : 38;
+  const pinColor = isSelected ? "#C5221F" : "#EA4335";
+  const shadowBlur = isSelected ? 14 : 5;
+  const shadowAlpha = isSelected ? "0.55" : "0.28";
 
   el.style.cssText = `
-    background: ${bg};
-    color: ${color};
-    border: 2px solid ${border};
-    border-radius: 22px;
-    padding: 5px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    font-family: system-ui, -apple-system, sans-serif;
+    width: ${w}px;
+    height: ${h}px;
     cursor: pointer;
-    white-space: nowrap;
-    box-shadow: ${shadow};
-    transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s ease;
-    transform: scale(${scale});
-    z-index: ${isSelected ? "10" : "1"};
-    position: relative;
-    letter-spacing: -0.01em;
+    filter: drop-shadow(0 ${isSelected ? 5 : 2}px ${shadowBlur}px rgba(234,67,53,${shadowAlpha}));
   `;
-  el.textContent = `$${hotel.price}`;
+
+  el.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 40" width="${w}" height="${h}">
+      <path fill="${pinColor}" d="M15 0C7.268 0 1 6.268 1 14c0 10.5 14 26 14 26s14-15.5 14-26C29 6.268 22.732 0 15 0z"/>
+      <circle cx="15" cy="13.5" r="6" fill="white" opacity="0.92"/>
+    </svg>
+  `;
+
+  el.title = `${hotel.name} — $${hotel.price}/night`;
   return el;
 }
 
@@ -150,6 +143,10 @@ export function MapPanel() {
   // Render hotel markers
   const renderMarkers = useCallback(() => {
     if (!mapRef.current) return;
+
+    // Clear stale popup from previous hover before rebuilding markers
+    popupRef.current?.remove();
+    popupRef.current = null;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current.clear();

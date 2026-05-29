@@ -5,8 +5,8 @@ import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import type { ReactTamboThreadMessage } from "@tambo-ai/react";
 import { Send, Sparkles, Bot, User, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 import { BookingDrawer } from "@/components/BookingDrawer";
 
@@ -21,12 +21,15 @@ export function ChatPanel() {
   const { messages, startNewThread } = useTambo();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [pendingSuggestion, setPendingSuggestion] = useState<string | null>(null);
 
   // Auto-scroll to latest message
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
   // Fire submit once the suggestion value has been committed to state
@@ -95,7 +98,7 @@ export function ChatPanel() {
       </div>
 
       {/* ── Messages ──────────────────────────────────────────────── */}
-      <ScrollArea className="flex-1 px-3 py-4 atlas-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 atlas-scrollbar">
         {messages.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center gap-5 py-10 text-center animate-atlas-fade-in">
@@ -193,7 +196,61 @@ export function ChatPanel() {
                             : "bg-white text-slate-800 rounded-tl-sm border border-slate-100/80",
                         )}
                       >
-                        {textContent}
+                        {isUser ? (
+                          textContent
+                        ) : (
+                          <ReactMarkdown
+                            components={{
+                              p: ({ children }) => (
+                                <p className="mb-1.5 last:mb-0">{children}</p>
+                              ),
+                              strong: ({ children }) => (
+                                <strong className="font-semibold text-slate-900">{children}</strong>
+                              ),
+                              em: ({ children }) => (
+                                <em className="italic text-slate-600">{children}</em>
+                              ),
+                              ul: ({ children }) => (
+                                <ul className="mt-1 mb-1.5 space-y-0.5 pl-3">{children}</ul>
+                              ),
+                              ol: ({ children }) => (
+                                <ol className="mt-1 mb-1.5 space-y-0.5 pl-4 list-decimal">{children}</ol>
+                              ),
+                              li: ({ children }) => (
+                                <li className="flex gap-1.5 items-start">
+                                  <span className="mt-1.5 w-1 h-1 rounded-full bg-blue-400 flex-shrink-0" />
+                                  <span>{children}</span>
+                                </li>
+                              ),
+                              h1: ({ children }) => (
+                                <h1 className="font-bold text-base text-slate-900 mb-1">{children}</h1>
+                              ),
+                              h2: ({ children }) => (
+                                <h2 className="font-semibold text-sm text-slate-900 mb-1">{children}</h2>
+                              ),
+                              h3: ({ children }) => (
+                                <h3 className="font-semibold text-sm text-slate-800 mb-0.5">{children}</h3>
+                              ),
+                              code: ({ children }) => (
+                                <code className="bg-slate-100 text-blue-700 px-1 py-0.5 rounded text-xs font-mono">
+                                  {children}
+                                </code>
+                              ),
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 underline underline-offset-2 hover:text-blue-800"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                            }}
+                          >
+                            {textContent}
+                          </ReactMarkdown>
+                        )}
                       </div>
                     )}
 
@@ -237,7 +294,7 @@ export function ChatPanel() {
             <div ref={bottomRef} />
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* ── Input ─────────────────────────────────────────────────── */}
       <div className="flex-shrink-0 px-3 pt-3 pb-4 border-t border-slate-200/70 bg-white/90 backdrop-blur-sm">

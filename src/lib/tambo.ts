@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { TamboComponent, TamboTool } from "@tambo-ai/react";
 import { HotelResultsList } from "@/components/HotelResultsList";
+import { HotelSearchForm } from "@/components/HotelSearchForm";
 import { BookingForm } from "@/components/BookingForm";
 import { BookingConfirmation } from "@/components/BookingConfirmation";
 
@@ -8,8 +9,8 @@ import { BookingConfirmation } from "@/components/BookingConfirmation";
 
 /** Lenient hotel shape the AI may pass; components call normalizeHotel(). */
 export const TamboHotelSchema = z.object({
-  id: z.string().describe("Hotel ID"),
-  name: z.string().describe("Hotel name"),
+  id: z.string().nullish().describe("Hotel ID"),
+  name: z.string().nullish().describe("Hotel name"),
   rating: z.number().nullish().describe("Star rating 1–5"),
   reviewScore: z
     .number()
@@ -138,6 +139,20 @@ const hotelResultsComponent: TamboComponent = {
   }),
 };
 
+const hotelSearchFormComponent: TamboComponent = {
+  name: "HotelSearchForm",
+  description:
+    "Renders an interactive search form so the user can enter city, dates, guests, and optional filters (price, stars) and search for hotels themselves. Use this when the user mentions a neighborhood, area, or city but has NOT provided check-in/check-out dates — instead of asking for details in plain text, render this form. Do NOT call searchHotels before rendering this component.",
+  component: HotelSearchForm,
+  propsSchema: z.object({
+    city: z
+      .string()
+      .nullish()
+      .default("")
+      .describe("Pre-fill the city field with whatever the user mentioned, e.g. 'Surat' or 'Vesu, Surat'"),
+  }),
+};
+
 const bookingFormComponent: TamboComponent = {
   name: "BookingForm",
   description:
@@ -172,6 +187,7 @@ const bookingConfirmationComponent: TamboComponent = {
 
 export const tamboComponents: TamboComponent[] = [
   hotelResultsComponent,
+  hotelSearchFormComponent,
   bookingFormComponent,
   bookingConfirmationComponent,
 ];
@@ -193,13 +209,14 @@ You help users find and book the perfect hotel by understanding their needs and 
 - Process hotel bookings seamlessly
 
 ## How to Respond
-- When users ask about hotels in a city → call searchHotels tool, then render HotelResults component
+- When users ask about hotels AND provide dates (even implicitly like "tonight", "this weekend") → call searchHotels tool, then render HotelResults component
+- When users mention a city/area/neighborhood but have NOT provided dates → render HotelSearchForm with the city pre-filled (do NOT ask questions in plain text — show the form)
 - When users want to book a specific hotel → render BookingForm component
 - After successful booking → render BookingConfirmation component
 - Be conversational, warm, and helpful
-- If the user does not specify dates, use today + tomorrow as defaults
 - Highlight key features (price, rating, location, amenities) in your text alongside the UI components
 
 ## Important
-Always call the searchHotels tool before rendering HotelResults — never fabricate hotel data.
-When the user mentions a city, proactively search for hotels even if they haven't given full details.`;
+- Always call the searchHotels tool before rendering HotelResults — never fabricate hotel data.
+- NEVER ask "what are your check-in dates?" in plain text — always render HotelSearchForm instead.
+- If the user says "use defaults" or "search now", call searchHotels with today + tomorrow as dates and render HotelResults.`;
