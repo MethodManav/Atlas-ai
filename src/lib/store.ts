@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Hotel } from "@/lib/hotels";
+import type { Hotel, BookingConfirmation } from "@/lib/hotels";
 
 interface MapState {
   center: [number, number]; // [lng, lat]
@@ -35,6 +35,10 @@ interface AtlasStore {
   // Location pin dropped by the map search bar
   searchedLocation: { center: [number, number]; name: string } | null;
   setSearchedLocation: (loc: { center: [number, number]; name: string } | null) => void;
+
+  // Completed booking — shown as a ticket in chat
+  bookingConfirmation: BookingConfirmation | null;
+  setBookingConfirmation: (data: BookingConfirmation | null) => void;
 }
 
 export const useAtlasStore = create<AtlasStore>((set) => ({
@@ -58,4 +62,7 @@ export const useAtlasStore = create<AtlasStore>((set) => ({
 
   searchedLocation: null,
   setSearchedLocation: (loc) => set({ searchedLocation: loc }),
+
+  bookingConfirmation: null,
+  setBookingConfirmation: (data) => set({ bookingConfirmation: data }),
 }));

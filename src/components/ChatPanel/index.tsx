@@ -7,6 +7,8 @@ import { Send, Sparkles, Bot, User, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
+import { BookingTicket } from "@/components/BookingTicket";
+import { useAtlasStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { BookingDrawer } from "@/components/BookingDrawer";
 
@@ -19,6 +21,7 @@ const SUGGESTIONS = [
 
 export function ChatPanel() {
   const { messages, startNewThread } = useTambo();
+  const { bookingConfirmation, setBookingConfirmation } = useAtlasStore();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -287,6 +290,26 @@ export function ChatPanel() {
                     <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:140ms]" />
                     <span className="w-2 h-2 rounded-full bg-blue-400 animate-bounce [animation-delay:280ms]" />
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Booking ticket — shown in chat after payment completes */}
+            {bookingConfirmation && (
+              <div className="flex gap-2 chat-message-enter">
+                <Avatar className="w-7 h-7 flex-shrink-0 mt-0.5 ring-2 ring-white shadow-sm">
+                  <AvatarFallback className="bg-gradient-to-br from-slate-100 to-slate-200 text-slate-600 text-xs">
+                    <Bot className="w-3.5 h-3.5" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-2 items-start">
+                  <div className="bg-white rounded-2xl rounded-tl-sm px-3.5 py-2.5 text-sm shadow-sm border border-slate-100/80 text-slate-700">
+                    🎉 Your booking is confirmed! Here&apos;s your ticket:
+                  </div>
+                  <BookingTicket
+                    {...bookingConfirmation}
+                    onDismiss={() => setBookingConfirmation(null)}
+                  />
                 </div>
               </div>
             )}

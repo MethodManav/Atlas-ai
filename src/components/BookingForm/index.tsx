@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreditCard, User, Mail, Phone, CalendarDays, Lock } from "lucide-react";
+import { CreditCard, User, Mail, Phone, CalendarDays, Lock, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export function BookingForm({
   const hotel = useMemo(() => normalizeHotel(hotelProp), [hotelProp]);
   const checkIn = checkInProp;
   const checkOut = checkOutProp;
-  const { setBookingHotel } = useAtlasStore();
+  const { setBookingHotel, setBookingConfirmation } = useAtlasStore();
   const [step, setStep] = useState<Step>("details");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -77,13 +77,9 @@ export function BookingForm({
       if (!res.ok) throw new Error("Booking failed");
       const confirmation = await res.json();
 
-      // Clear booking form from store — confirmation will be shown by AI
+      // Close drawer first, then surface the ticket in chat
       setBookingHotel(null);
-
-      // Dispatch a custom event so the chat can react
-      window.dispatchEvent(
-        new CustomEvent("hotel-booked", { detail: confirmation })
-      );
+      setBookingConfirmation(confirmation);
     } catch (err) {
       console.error(err);
       setStep("payment");
@@ -93,7 +89,33 @@ export function BookingForm({
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 overflow-hidden">
+    <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 overflow-hidden relative">
+      {/* ── Booking loader overlay ───────────────────────────────── */}
+      {step === "confirming" && (
+        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center gap-5 z-20 rounded-2xl">
+          <div className="relative flex items-center justify-center">
+            <Loader2 className="w-14 h-14 animate-spin text-blue-500" />
+            <div className="absolute w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4 text-blue-400" />
+            </div>
+          </div>
+          <div className="text-center px-6">
+            <p className="font-bold text-slate-800 text-base">Processing your booking</p>
+            <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+              Securing your reservation · Please don&apos;t close this window
+            </p>
+          </div>
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2 h-2 rounded-full bg-blue-400 animate-bounce"
+                style={{ animationDelay: `${i * 140}ms` }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       {/* Hotel summary */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3.5 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
