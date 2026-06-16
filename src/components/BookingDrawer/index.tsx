@@ -27,25 +27,25 @@ export function BookingDrawer() {
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <div className="w-10 h-1 rounded-full bg-white/10" />
         </div>
 
         <SheetHeader className="flex flex-row items-center justify-between mb-4 px-1">
           <div>
-            <SheetTitle className="text-base font-bold text-slate-800">
+            <SheetTitle className="text-base font-bold text-zinc-100">
               Book your stay
             </SheetTitle>
             {bookingHotel && (
-              <p className="text-xs text-slate-400 mt-0.5 font-medium truncate max-w-[220px]">
+              <p className="text-xs text-zinc-500 mt-0.5 font-medium truncate max-w-[220px]">
                 {bookingHotel.name}
               </p>
             )}
           </div>
           <button
             onClick={() => setBookingHotel(null)}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center transition-colors"
           >
-            <X className="w-4 h-4 text-slate-500" />
+            <X className="w-4 h-4 text-zinc-400" />
           </button>
         </SheetHeader>
 

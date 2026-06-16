@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MapPin, CalendarDays, Users, SlidersHorizontal, Loader2 } from "lucide-react";
+import type { ComponentProps } from "react";
+import { Search, MapPin, Users, SlidersHorizontal, Loader2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePickerButton } from "@/components/ui/date-picker-button";
 import { HotelResultsList } from "@/components/HotelResultsList";
+import { cn } from "@/lib/utils";
 import type { HotelInput } from "@/lib/hotels";
 
 interface HotelSearchFormProps {
@@ -27,6 +30,17 @@ interface SearchResult {
   checkOut: string;
   totalFound: number;
   nextCursor: number | null;
+}
+
+function IconInput({ icon: Icon, className, ...props }: ComponentProps<"input"> & { icon: React.ElementType }) {
+  return (
+    <div className="relative flex items-center">
+      <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500 flex items-center z-10">
+        <Icon className="w-4 h-4" />
+      </span>
+      <Input {...props} className={cn("pl-10", className)} />
+    </div>
+  );
 }
 
 export function HotelSearchForm({ city: cityProp }: HotelSearchFormProps) {
@@ -73,7 +87,7 @@ export function HotelSearchForm({ city: cityProp }: HotelSearchFormProps) {
       <div className="w-full space-y-2">
         <button
           onClick={() => setResult(null)}
-          className="text-xs text-blue-500 hover:text-blue-700 font-medium flex items-center gap-1 transition-colors"
+          className="text-xs text-violet-400 hover:text-violet-300 font-medium flex items-center gap-1 transition-colors"
         >
           ← Modify search
         </button>
@@ -92,126 +106,162 @@ export function HotelSearchForm({ city: cityProp }: HotelSearchFormProps) {
   return (
     <form
       onSubmit={handleSearch}
-      className="w-full rounded-2xl border border-slate-100 bg-white shadow-lg shadow-slate-200/40 overflow-hidden"
+      className="w-full rounded-2xl border border-white/8 bg-zinc-900/80 shadow-xl shadow-black/30 overflow-hidden"
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center gap-2">
-        <Search className="w-4 h-4 text-white/80" />
-        <span className="font-semibold text-sm text-white">Find Hotels</span>
+      <div className="relative px-4 py-3 flex items-center gap-2 bg-gradient-to-r from-violet-700 via-violet-600 to-indigo-600 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
+        <Search className="w-4 h-4 text-white/80 relative" />
+        <span className="font-semibold text-sm text-white relative">Find Hotels</span>
       </div>
 
-      <div className="p-4 space-y-3">
-        {/* City */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-            <MapPin className="w-3 h-3" /> City
+      <div className="p-5 space-y-4">
+        {/* Destination */}
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+            Destination
           </label>
-          <Input
+          <IconInput
+            icon={MapPin}
             placeholder="e.g. Surat, Paris, Dubai"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="h-9 text-sm"
+            className="h-10 text-sm rounded-xl"
             required
           />
         </div>
 
-        {/* Dates row */}
+        {/* Dates */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-              <CalendarDays className="w-3 h-3" /> Check-in
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+              Check-in
             </label>
-            <Input
-              type="date"
+            <DatePickerButton
               value={checkIn}
-              min={todayStr()}
-              onChange={(e) => {
-                setCheckIn(e.target.value);
-                if (e.target.value >= checkOut) {
-                  const d = new Date(e.target.value);
+              onChange={(date) => {
+                setCheckIn(date);
+                if (date >= checkOut) {
+                  const d = new Date(date + "T00:00:00");
                   d.setDate(d.getDate() + 1);
                   setCheckOut(d.toISOString().split("T")[0]);
                 }
               }}
-              className="h-9 text-sm"
+              minDate={todayStr()}
             />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-              <CalendarDays className="w-3 h-3" /> Check-out
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+              Check-out
             </label>
-            <Input
-              type="date"
+            <DatePickerButton
               value={checkOut}
-              min={checkIn}
-              onChange={(e) => setCheckOut(e.target.value)}
-              className="h-9 text-sm"
+              onChange={setCheckOut}
+              minDate={checkIn}
             />
           </div>
         </div>
 
         {/* Guests */}
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-slate-600 flex items-center gap-1">
-            <Users className="w-3 h-3" /> Guests
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+            Guests
           </label>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setGuests((g) => Math.max(1, g - 1))}
-              className="w-8 h-8 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-lg flex items-center justify-center transition-colors"
-            >
-              −
-            </button>
-            <span className="w-8 text-center text-sm font-semibold text-slate-800">{guests}</span>
-            <button
-              type="button"
-              onClick={() => setGuests((g) => Math.min(10, g + 1))}
-              className="w-8 h-8 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold text-lg flex items-center justify-center transition-colors"
-            >
-              +
-            </button>
+          <div className="flex items-center justify-between h-12 px-3 rounded-xl border border-white/8 bg-zinc-800/50 hover:border-white/14 transition-colors">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-violet-400" />
+              <span className="text-sm font-medium text-zinc-300">
+                {guests === 1 ? "1 guest" : `${guests} guests`}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setGuests((g) => Math.max(1, g - 1))}
+                disabled={guests <= 1}
+                className={cn(
+                  "w-8 h-8 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-150",
+                  guests <= 1
+                    ? "border-white/8 text-zinc-700 cursor-not-allowed"
+                    : "border-white/15 text-zinc-400 hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-950/40",
+                )}
+              >
+                −
+              </button>
+              <span className="w-5 text-center text-base font-bold text-zinc-100 tabular-nums">
+                {guests}
+              </span>
+              <button
+                type="button"
+                onClick={() => setGuests((g) => Math.min(10, g + 1))}
+                disabled={guests >= 10}
+                className={cn(
+                  "w-8 h-8 rounded-full border-2 flex items-center justify-center text-lg font-bold transition-all duration-150",
+                  guests >= 10
+                    ? "border-white/8 text-zinc-700 cursor-not-allowed"
+                    : "border-white/15 text-zinc-400 hover:border-violet-500/50 hover:text-violet-400 hover:bg-violet-950/40",
+                )}
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Optional filters toggle */}
+        {/* Filter toggle */}
         <button
           type="button"
           onClick={() => setShowFilters((f) => !f)}
-          className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-700 font-medium transition-colors"
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150",
+            showFilters
+              ? "border-violet-500/40 bg-violet-950/50 text-violet-300"
+              : "border-white/10 bg-zinc-800/50 text-zinc-500 hover:border-white/20 hover:text-zinc-300",
+          )}
         >
           <SlidersHorizontal className="w-3 h-3" />
-          {showFilters ? "Hide filters" : "Add filters (price, rating)"}
+          {showFilters ? "Hide filters" : "Filters"}
+          <span className={cn("transition-transform duration-200 inline-block leading-none", showFilters ? "rotate-180" : "")}>
+            ▾
+          </span>
         </button>
 
         {showFilters && (
-          <div className="grid grid-cols-2 gap-2 animate-atlas-fade-in">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-600">Max price/night ($)</label>
+          <div className="grid grid-cols-2 gap-3 animate-atlas-fade-in">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+                Max price/night ($)
+              </label>
               <Input
                 type="number"
                 placeholder="e.g. 200"
                 value={maxPrice}
                 min={1}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                className="h-9 text-sm"
+                className="h-10 text-sm rounded-xl"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-600">Min stars</label>
-              <div className="flex gap-1 pt-1">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest">
+                Min stars
+              </label>
+              <div className="flex gap-0.5 h-10 items-center px-1 rounded-xl border border-white/8 bg-zinc-800/50">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setMinRating(minRating === s ? "" : s)}
-                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${
-                      minRating !== "" && s <= minRating
-                        ? "bg-amber-400 text-white"
-                        : "bg-slate-100 text-slate-400 hover:bg-slate-200"
-                    }`}
+                    className="atlas-star-btn flex-1 h-8 rounded-lg flex items-center justify-center"
+                    aria-label={`${s} star${s > 1 ? "s" : ""} minimum`}
                   >
-                    {s}★
+                    <Star
+                      className={cn(
+                        "w-4 h-4 transition-colors duration-150",
+                        typeof minRating === "number" && s <= minRating
+                          ? "fill-amber-400 text-amber-400"
+                          : "fill-none text-zinc-600",
+                      )}
+                    />
                   </button>
                 ))}
               </div>
@@ -220,13 +270,15 @@ export function HotelSearchForm({ city: cityProp }: HotelSearchFormProps) {
         )}
 
         {error && (
-          <p className="text-xs text-red-500 font-medium">{error}</p>
+          <p className="text-xs text-red-400 font-medium bg-red-950/40 px-3 py-2 rounded-lg border border-red-800/40">
+            {error}
+          </p>
         )}
 
         <Button
           type="submit"
           disabled={!city.trim() || loading}
-          className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-blue-300/40 transition-all atlas-btn-shine"
+          className="w-full h-11 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-900/30 hover:shadow-violet-700/40 transition-all atlas-btn-shine rounded-xl"
         >
           {loading ? (
             <span className="flex items-center gap-2">

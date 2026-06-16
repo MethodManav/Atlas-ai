@@ -107,14 +107,14 @@ export function HotelResultsList({
   if (!allHotels.length) {
     return (
       <div className="flex flex-col items-center gap-3 py-8 text-center animate-atlas-fade-in">
-        <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center">
-          <Search className="w-6 h-6 text-slate-400" />
+        <div className="w-12 h-12 rounded-2xl bg-zinc-800 flex items-center justify-center">
+          <Search className="w-6 h-6 text-zinc-600" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-600">
+          <p className="text-sm font-semibold text-zinc-400">
             {city ? `No hotels found in ${city}` : "No hotels to display yet"}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-zinc-600 mt-1">
             Try another city, different dates, or run a new search.
           </p>
         </div>
@@ -133,16 +133,16 @@ export function HotelResultsList({
   return (
     <div className="flex flex-col gap-3 w-full">
       {/* ── Header chip ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 animate-atlas-fade-in">
-        <div className="w-7 h-7 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-          <MapPin className="w-3.5 h-3.5 text-blue-500" />
+      <div className="flex items-center gap-2.5 pb-2 border-b border-white/8 animate-atlas-fade-in">
+        <div className="w-7 h-7 rounded-xl bg-violet-950/60 flex items-center justify-center flex-shrink-0">
+          <MapPin className="w-3.5 h-3.5 text-violet-400" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-800 leading-tight">
+          <p className="text-sm font-semibold text-zinc-200 leading-tight">
             {totalFound} hotel{totalFound !== 1 ? "s" : ""} in{" "}
-            <span className="text-blue-600">{city}</span>
+            <span className="text-violet-400">{city}</span>
           </p>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-zinc-600 mt-0.5">
             {checkIn} → {checkOut} · {nights} night{nights !== 1 ? "s" : ""}
           </p>
         </div>
@@ -166,12 +166,12 @@ export function HotelResultsList({
             <button
               onClick={loadMore}
               disabled={isLoadingMore}
-              className="flex flex-col items-center justify-center gap-2.5 p-4 rounded-2xl border-2 border-dashed border-blue-200 hover:border-blue-400 text-blue-500 hover:text-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 w-full h-full min-h-[200px] bg-blue-50/30 hover:bg-blue-50 hover:-translate-y-1 hover:shadow-md"
+              className="flex flex-col items-center justify-center gap-2.5 p-4 rounded-2xl border-2 border-dashed border-white/10 hover:border-violet-500/40 text-zinc-500 hover:text-violet-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 w-full h-full min-h-[200px] bg-zinc-900/50 hover:bg-violet-950/30 hover:-translate-y-1 hover:shadow-md"
             >
               {isLoadingMore ? (
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center">
                   <ChevronRight className="w-5 h-5" />
                 </div>
               )}
@@ -183,8 +183,8 @@ export function HotelResultsList({
         )}
       </div>
 
-      <p className="text-[10px] text-center text-slate-400 font-medium">
-        Prices shown per night · Tap <strong className="text-slate-500">Book</strong> to reserve
+      <p className="text-[10px] text-center text-zinc-600 font-medium">
+        Prices shown per night · Tap <strong className="text-zinc-500">Book</strong> to reserve
       </p>
     </div>
   );
