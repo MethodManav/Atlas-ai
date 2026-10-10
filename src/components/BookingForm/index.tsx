@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import {
   CreditCard, User, Mail, Phone, Lock, Loader2,
-  CheckCircle2, Shield, Zap, Check,
+  CheckCircle2, Shield, Zap, Check, LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,7 +73,8 @@ export function BookingForm({
   const hotel = useMemo(() => normalizeHotel(hotelProp), [hotelProp]);
   const checkIn = checkInProp;
   const checkOut = checkOutProp;
-  const { setBookingHotel, setBookingConfirmation } = useAtlasStore();
+  const { setBookingHotel, setBookingConfirmation, user, setAuthModalOpen } =
+    useAtlasStore();
   const [step, setStep] = useState<Step>("details");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -86,6 +87,20 @@ export function BookingForm({
     cardCvv: "",
     cardHolder: "",
   });
+
+  // Pre-fill form when user logs in
+  useEffect(() => {
+    if (user) {
+      setForm((f) => ({
+        ...f,
+        firstName: f.firstName || user.firstName || (user.name ? user.name.split(" ")[0] : ""),
+        lastName: f.lastName || user.lastName || (user.name ? user.name.split(" ").slice(1).join(" ") : ""),
+        email: f.email || user.email || "",
+        phone: f.phone || user.phone || "",
+        cardHolder: f.cardHolder || user.name || "",
+      }));
+    }
+  }, [user]);
 
   const nights = Math.max(
     1,
@@ -102,6 +117,10 @@ export function BookingForm({
   }
 
   async function handleBook() {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     setLoading(true);
     setStep("confirming");
     try {
@@ -199,9 +218,46 @@ export function BookingForm({
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* Step indicator — animated circles */}
-        <div className="flex items-start">
+      {/* If user is not logged in */}
+      {!user ? (
+        <div className="p-6 text-center space-y-4">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-violet-600/20 to-indigo-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400 shadow-inner">
+            <Lock className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white tracking-tight">
+              Sign In Required to Book
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1 max-w-xs mx-auto leading-relaxed">
+              Please sign in to your Atlas account to confirm this reservation and receive instant booking details.
+            </p>
+          </div>
+          <Button
+            onClick={() => setAuthModalOpen(true)}
+            className="w-full h-11 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-violet-900/30 flex items-center justify-center gap-2 atlas-btn-shine"
+          >
+            <LogIn className="w-4 h-4" />
+            <span>Sign In to Continue Booking</span>
+          </Button>
+          <p className="text-[11px] text-zinc-500">
+            Fast 1-click traveler sign-in available
+          </p>
+        </div>
+      ) : (
+        <div className="p-4 space-y-4">
+          {/* Active user banner */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-xs">
+            <div className="flex items-center gap-2 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="text-zinc-300 truncate">
+                Booking as <strong className="text-white">{user.name}</strong>
+              </span>
+            </div>
+            <span className="text-[11px] text-violet-400 font-medium ml-2">Verified</span>
+          </div>
+
+          {/* Step indicator — animated circles */}
+          <div className="flex items-start">
           {/* Step 1 */}
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
             <div
@@ -456,6 +512,7 @@ export function BookingForm({
           </div>
         )}
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 }

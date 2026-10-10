@@ -38,7 +38,11 @@ function createPinEl(hotel: Hotel, isSelected: boolean): HTMLElement {
   return el;
 }
 
-export function MapPanel() {
+interface MapPanelProps {
+  chatOpen?: boolean;
+}
+
+export function MapPanel({ chatOpen = true }: MapPanelProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
@@ -53,6 +57,9 @@ export function MapPanel() {
     setBookingHotel,
     searchContext,
     searchedLocation,
+    user,
+    setAuthModalOpen,
+    setPendingBookingHotel,
   } = useAtlasStore();
 
   // Init map
@@ -83,6 +90,45 @@ export function MapPanel() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Ensure map canvas dynamically resizes when container dimension changes
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.resize();
+    });
+    observer.observe(mapContainerRef.current);
+
+    const handleWindowResize = () => {
+      mapRef.current?.resize();
+    };
+    window.addEventListener("resize", handleWindowResize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", handleWindowResize);
+    };
+  }, []);
+
+  // Smoothly resize Mapbox canvas at 60fps during the 300ms CSS width transition of the chatbot collapse/expand
+  useEffect(() => {
+    if (!mapRef.current) return;
+    let animId: number;
+    const start = performance.now();
+    const duration = 350;
+
+    const step = (now: number) => {
+      mapRef.current?.resize();
+      if (now - start < duration) {
+        animId = requestAnimationFrame(step);
+      } else {
+        mapRef.current?.resize();
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [chatOpen]);
 
   // Fly to new location
   useEffect(() => {
@@ -193,12 +239,25 @@ export function MapPanel() {
       });
 
       el.addEventListener("click", () => {
+        if (!user) {
+          setPendingBookingHotel(hotel);
+          setAuthModalOpen(true);
+          return;
+        }
         setBookingHotel(hotel);
       });
 
       markersRef.current.set(hotel.id, marker);
     });
-  }, [hotels, selectedHotelId, setSelectedHotelId, setBookingHotel]);
+  }, [
+    hotels,
+    selectedHotelId,
+    setSelectedHotelId,
+    setBookingHotel,
+    user,
+    setAuthModalOpen,
+    setPendingBookingHotel,
+  ]);
 
   useEffect(() => {
     renderMarkers();
@@ -237,7 +296,14 @@ export function MapPanel() {
               <div
                 key={h.id}
                 className="flex justify-between items-center text-xs atlas-glass rounded-xl px-3.5 py-2.5 cursor-pointer hover:border-blue-300 hover:-translate-y-0.5 transition-all shadow-sm hover:shadow-md"
-                onClick={() => setBookingHotel(h)}
+                onClick={() => {
+                  if (!user) {
+                    setPendingBookingHotel(h);
+                    setAuthModalOpen(true);
+                    return;
+                  }
+                  setBookingHotel(h);
+                }}
               >
                 <span className="font-semibold truncate text-slate-700">
                   {h.name}

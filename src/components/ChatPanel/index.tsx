@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useTambo, useTamboThreadInput } from "@tambo-ai/react";
 import type { ReactTamboThreadMessage } from "@tambo-ai/react";
-import { Send, Sparkles, Bot, User, Compass } from "lucide-react";
+import { Send, Sparkles, Bot, User, Compass, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import ReactMarkdown from "react-markdown";
@@ -21,7 +21,13 @@ const SUGGESTIONS = [
 
 export function ChatPanel() {
   const { messages, startNewThread } = useTambo();
-  const { bookingConfirmation, setBookingConfirmation } = useAtlasStore();
+  const {
+    bookingConfirmation,
+    setBookingConfirmation,
+    user,
+    setUser,
+    setAuthModalOpen,
+  } = useAtlasStore();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -87,10 +93,40 @@ export function ChatPanel() {
           <p className="text-xs text-violet-300/70 font-medium">Hotel Concierge</p>
         </div>
 
-        {/* Online badge */}
-        <div className="relative ml-auto flex items-center gap-2 bg-white/5 backdrop-blur-sm rounded-full px-3 py-1.5 ring-1 ring-white/10">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-          <span className="text-xs text-white/80 font-semibold">Online</span>
+        {/* Header Right Actions */}
+        <div className="relative ml-auto flex items-center gap-2">
+          {/* User Authentication Pill */}
+          {user ? (
+            <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 backdrop-blur-sm rounded-full pl-2 pr-1.5 py-1">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
+              <span className="text-xs text-zinc-200 font-medium max-w-[80px] truncate">
+                {user.firstName || user.name.split(" ")[0]}
+              </span>
+              <button
+                onClick={() => setUser(null)}
+                title="Sign Out"
+                className="p-1 hover:bg-white/10 rounded-full text-zinc-400 hover:text-rose-400 transition-colors ml-0.5"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAuthModalOpen(true)}
+              className="flex items-center gap-1.5 bg-violet-600/20 hover:bg-violet-600/35 border border-violet-500/40 backdrop-blur-sm rounded-full px-2.5 py-1.5 text-xs text-violet-200 hover:text-white font-medium transition-all shadow-sm shadow-violet-950/40"
+            >
+              <LogIn className="w-3.5 h-3.5 text-violet-400" />
+              <span>Sign In</span>
+            </button>
+          )}
+
+          {/* Online badge */}
+          <div className="flex items-center gap-1.5 bg-white/5 backdrop-blur-sm rounded-full px-2.5 py-1.5 ring-1 ring-white/10">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+            <span className="text-xs text-white/80 font-semibold hidden sm:inline">Online</span>
+          </div>
         </div>
       </div>
 

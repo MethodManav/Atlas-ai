@@ -28,7 +28,29 @@ export async function POST(req: NextRequest) {
       cursor: typeof cursor === "number" ? cursor : undefined,
     };
 
+    const startTime = Date.now();
     const result = await searchHotels(params);
+    const durationMs = Date.now() - startTime;
+
+    try {
+      const { addAdminAiQuery } = await import("@/lib/admin-data");
+      let intent: "Luxury" | "Budget" | "Family" | "Business" | "General Search" = "General Search";
+      if (maxPrice && maxPrice < 150) intent = "Budget";
+      else if (minRating && minRating >= 5) intent = "Luxury";
+      else if (guests && guests > 2) intent = "Family";
+
+      addAdminAiQuery({
+        prompt: `Looking for hotels in ${city} (${params.checkIn} to ${params.checkOut})`,
+        intent,
+        destination: city,
+        toolsInvoked: ["searchHotels"],
+        latencyMs: durationMs,
+        status: result.hotels.length > 0 ? "SUCCESS" : "FALLBACK",
+        convertedToBooking: false,
+      });
+    } catch (logErr) {
+      console.warn("Failed to log AI query to admin store:", logErr);
+    }
 
     return NextResponse.json({
       hotels: result.hotels,

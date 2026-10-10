@@ -4,15 +4,19 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { MapPanel } from "@/components/MapPanel";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function Home() {
   const [chatOpen, setChatOpen] = useState(true);
 
   return (
     <main className="flex flex-row h-screen w-screen overflow-hidden bg-slate-950">
+      {/* Global Auth Modal */}
+      <AuthModal />
+
       {/* Left: Map Panel — fills all remaining space */}
       <div className="flex-1 min-w-0 relative h-full">
-        <MapPanel />
+        <MapPanel chatOpen={chatOpen} />
 
         {/* Floating toggle button — glassmorphism pill at the right edge of the map */}
         <button

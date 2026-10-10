@@ -40,6 +40,9 @@ export function HotelCard({
     setSearchContext,
     setMapState,
     selectedHotelId,
+    user,
+    setAuthModalOpen,
+    setPendingBookingHotel,
   } = useAtlasStore();
 
   const isSelected = selectedHotelId === hotel.id;
@@ -59,6 +62,11 @@ export function HotelCard({
   function handleBook() {
     if (checkIn && checkOut) {
       setSearchContext({ checkIn, checkOut, guests });
+    }
+    if (!user) {
+      setPendingBookingHotel(hotel);
+      setAuthModalOpen(true);
+      return;
     }
     setBookingHotel(hotel);
   }

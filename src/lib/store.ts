@@ -1,12 +1,34 @@
 import { create } from "zustand";
 import type { Hotel, BookingConfirmation } from "@/lib/hotels";
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+}
+
 interface MapState {
   center: [number, number]; // [lng, lat]
   zoom: number;
 }
 
 interface AtlasStore {
+  // Current authenticated user (null if not logged in)
+  user: UserProfile | null;
+  setUser: (user: UserProfile | null) => void;
+
+  // Auth modal open/close
+  isAuthModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
+
+  // Hotel queued for booking once login completes
+  pendingBookingHotel: Hotel | null;
+  setPendingBookingHotel: (hotel: Hotel | null) => void;
+
   // Hotels visible on the map / in results
   hotels: Hotel[];
   setHotels: (hotels: Hotel[]) => void;
@@ -41,7 +63,36 @@ interface AtlasStore {
   setBookingConfirmation: (data: BookingConfirmation | null) => void;
 }
 
+function getInitialUser(): UserProfile | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("atlas_auth_user");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAtlasStore = create<AtlasStore>((set) => ({
+  user: getInitialUser(),
+  setUser: (user) => {
+    if (typeof window !== "undefined") {
+      try {
+        if (user) localStorage.setItem("atlas_auth_user", JSON.stringify(user));
+        else localStorage.removeItem("atlas_auth_user");
+      } catch (err) {
+        console.warn("Could not persist user to localStorage:", err);
+      }
+    }
+    set({ user });
+  },
+
+  isAuthModalOpen: false,
+  setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),
+
+  pendingBookingHotel: null,
+  setPendingBookingHotel: (hotel) => set({ pendingBookingHotel: hotel }),
+
   hotels: [],
   setHotels: (hotels) => set({ hotels }),
 
